@@ -1,5 +1,6 @@
 // app/_layout.tsx
-import { Stack } from "expo-router";
+import { AuthProvider } from "@/context/AuthContext";
+import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
@@ -9,7 +10,7 @@ const LightTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: "#007bff",
+    primary: "#007bff", // brand blue
   },
 };
 
@@ -26,9 +27,11 @@ export default function RootLayout() {
   const theme = scheme === "dark" ? DarkTheme : LightTheme;
 
   return (
-    <PaperProvider theme={theme}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false }} />
-    </PaperProvider>
+    <AuthProvider>
+      <PaperProvider theme={theme}>
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+        <Slot />
+      </PaperProvider>
+    </AuthProvider>
   );
 }

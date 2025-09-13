@@ -1,8 +1,7 @@
-// app/login.tsx
-import { login } from "@/services/auth/authService";
+import { useAuth } from "@/context/AuthContext";
 import { router } from "expo-router";
 import { ArrowRight, Eye, EyeOff } from "lucide-react-native";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -16,7 +15,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 /* ----------------------------- Design tokens ----------------------------- */
 const COLORS = {
   primary: "#007AFF",
@@ -32,6 +30,7 @@ const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 };
 
 /* --------------------------------- Screen -------------------------------- */
 export default function LoginScreen() {
+  const { login, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,7 +47,7 @@ export default function LoginScreen() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       e.email = "Enter a valid email";
     if (!password) e.password = "Password is required";
-    else if (password.length < 6) e.password = "Minimum 6 characters";
+    console.log(isAuthenticated);
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -74,21 +73,23 @@ export default function LoginScreen() {
 
     try {
       const res = await login(email, password);
-      if (!res.ok) {
-        console.log("Login error:", res);
-        setServerError(
-          res?.error?.message || "Login failed. Please try again."
-        );
+
+      if (!res.success) {
+        console.log(res?.error);
+        setServerError(res?.error || "Login failed. Please try again.");
         return;
       }
-      router.replace("/dashboard");
     } catch (e: any) {
       setServerError(e?.message || "Network error. Check your connection.");
     } finally {
       setLoading(false);
     }
   };
-
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(protected)/(tabs)/dashboard");
+    }
+  }, [isAuthenticated]);
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.white }}>
       <SafeAreaView style={{ flex: 1 }}>

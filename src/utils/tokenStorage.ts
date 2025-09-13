@@ -17,10 +17,12 @@ export async function setItem(key: string, value: string | null) {
       await SecureStore.deleteItemAsync(key);
       return;
     }
-    await SecureStore.setItemAsync(key, value, {
-      keychainService: "com.gigasmart.tokens",
-      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-    });
+    console.log("setItem", value);
+    await SecureStore.setItemAsync(key, value);
+    // await SecureStore.setItemAsync(key, value, {
+    //   keychainService: "com.gigasmart.tokens",
+    //   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+    // });
   } catch (err) {
     console.error(`tokenStorage.setItem(${key}) failed:`, err);
   }
