@@ -4,19 +4,12 @@ import { ACCESS, REFRESH, tokenStorage } from "@/utils/tokenStorage";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
 // add near the top of client.ts, after imports
-const AUTH_PATHS = new Set(["/auth/login", "/auth/refresh", "/auth/logout"]);
-const isAuthRequest = (cfg?: AxiosRequestConfig) => {
-  if (!cfg?.url) return false;
-  try {
-    // normalize relative/absolute URLs
-    const u = new URL(cfg.url, ENV.API_URL);
-    return AUTH_PATHS.has(u.pathname);
-  } catch {
-    return cfg.url.startsWith("/auth/");
-  }
-};
+const skipAuthPaths = ["/auth/login", "/auth/refresh", "/login", "/refresh"];
 
-const api = axios.create({ baseURL: ENV.API_URL, timeout: ENV.TIMEOUT_MS });
+const api = axios.create({
+  baseURL: ENV.API_URL,
+  timeout: ENV.TIMEOUT_MS,
+});
 
 // Optional: UI redirect when refresh fails
 let onUnauthorized: (() => void) | null = null;
@@ -25,7 +18,10 @@ export const setOnUnauthorized = (fn: () => void) => (onUnauthorized = fn);
 // Attach bearer
 api.interceptors.request.use(async (config) => {
   try {
-    if (!isAuthRequest(config)) {
+    const shouldSkipAuth = skipAuthPaths.some((path) =>
+      config.url?.includes(path)
+    );
+    if (!shouldSkipAuth) {
       const token = await tokenStorage.getAccessToken();
       if (token && !tokenStorage.isTokenExpired(token) && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -71,53 +67,57 @@ api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const status = error?.response?.status ?? 0;
-    console.log("Response error status:", status, error?.message);
-    const original = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-    if (isAuthRequest(original) || status !== 401 || original?._retry) {
-      console.log(
-        " isAuthRequest Response error status:",
-        status,
-        error?.message
-      ); // Non-401 or already retried: map and reject
-      return Promise.reject(toApiError(error));
-    }
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        queue.push({
-          resolve: (token: string) => {
-            try {
-              original.headers = original.headers ?? {};
-              original.headers.Authorization = `Bearer ${token}`;
-              resolve(api(original));
-            } catch (e) {
-              reject(toApiError(e));
-            }
-          },
-          reject: (e) => reject(toApiError(e)),
+    // Check if error is 401 and we haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const shouldSkipRefresh = skipAuthPaths.some((path) =>
+        originalRequest.url?.includes(path)
+      );
+      if (shouldSkipRefresh) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          queue.push({
+            resolve: (token: string) => {
+              try {
+                originalRequest.headers = originalRequest.headers ?? {};
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                resolve(api(originalRequest));
+              } catch (e) {
+                reject(toApiError(e));
+              }
+            },
+            reject: (e) => reject(toApiError(e)),
+          });
         });
-      });
+      }
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const newToken = await refreshAccessTokenInternal();
+        flushQueue(null, newToken);
+
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (e) {
+        flushQueue(e);
+        await tokenStorage.multiRemove([ACCESS, REFRESH]);
+        onUnauthorized?.();
+        return Promise.reject(toApiError(e));
+      } finally {
+        isRefreshing = false;
+      }
     }
 
-    original._retry = true;
-    isRefreshing = true;
-
-    try {
-      const newToken = await refreshAccessTokenInternal();
-      flushQueue(null, newToken);
-
-      original.headers = original.headers ?? {};
-      original.headers.Authorization = `Bearer ${newToken}`;
-      return api(original);
-    } catch (e) {
-      flushQueue(e);
-      await tokenStorage.multiRemove([ACCESS, REFRESH]);
-      onUnauthorized?.();
-      return Promise.reject(toApiError(e));
-    } finally {
-      isRefreshing = false;
-    }
+    return Promise.reject(error);
   }
 );
 

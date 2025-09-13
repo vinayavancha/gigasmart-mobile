@@ -4,21 +4,35 @@ import { ApiError, ErrorCode } from "../types/http";
 export function toApiError(err: unknown): ApiError {
   const ax = err as AxiosError<any>;
   const status = ax?.response?.status;
-  console.log("ax object all properties:", ax?.code, ax?.response, ax?.message);
-  // Network / timeout
+
+  console.log("Full axios error object:", {
+    code: ax?.code,
+    response: ax?.response,
+    status: ax?.response?.status,
+    message: ax?.message,
+    isAxiosError: ax?.isAxiosError,
+  });
+
+  // Network / timeout errors
   if (ax?.code === "ECONNABORTED") {
     return new ApiError("Request timed out. Please try again.", {
       code: "TIMEOUT",
     });
   }
-  if (!ax.response) {
-    console.error("Network error error.ts checking:", ax?.code, ax.response);
+
+  // True network errors (no response received)
+  if (!ax?.response) {
+    console.error(
+      "Network error - no response received:",
+      ax?.code,
+      ax?.message
+    );
     return new ApiError("Network error. Check your connection.", {
       code: "NETWORK_ERROR",
     });
   }
 
-  // Known HTTP statuses
+  // Known HTTP status errors (response received)
   const mapStatus = (s?: number): ErrorCode => {
     switch (s) {
       case 401:

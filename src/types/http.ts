@@ -1,25 +1,26 @@
 export type ErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT"
   | "UNAUTHORIZED"
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "VALIDATION_ERROR"
   | "SERVER_ERROR"
+  | "NETWORK_ERROR"
+  | "TIMEOUT"
   | "UNKNOWN";
 
 export class ApiError extends Error {
-  status?: number;
-  code: ErrorCode;
-  details?: unknown;
+  public readonly status?: number;
+  public readonly code: ErrorCode;
+  public readonly details?: any;
+
   constructor(
     message: string,
-    opts?: { status?: number; code?: ErrorCode; details?: unknown }
+    options: { status?: number; code: ErrorCode; details?: any }
   ) {
     super(message);
     this.name = "ApiError";
-    this.status = opts?.status;
-    this.code = opts?.code ?? "UNKNOWN";
-    this.details = opts?.details;
+    this.status = options.status;
+    this.code = options.code;
+    this.details = options.details;
   }
 }

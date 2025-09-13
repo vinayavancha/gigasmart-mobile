@@ -30,12 +30,14 @@ export async function login(
   if (!res.ok) return res;
 
   const { access_token, refresh_token } = res.value;
+
   if (!access_token || !refresh_token) {
     return err(new ApiError("Invalid login response.", { code: "UNKNOWN" }));
   }
 
   await tokenStorage.setItem(ACCESS, access_token);
   await tokenStorage.setItem(REFRESH, refresh_token);
+
   return ok(res.value);
 }
 
