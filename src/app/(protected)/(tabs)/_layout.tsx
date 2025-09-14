@@ -6,14 +6,25 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ActivityIndicator, View } from "react-native";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  return !isAuthenticated ? (
-    <Redirect href="/login" />
-  ) : (
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
+
+  return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,

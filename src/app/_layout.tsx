@@ -1,6 +1,6 @@
 // app/_layout.tsx
 import { AuthProvider } from "@/context/AuthContext";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
@@ -30,7 +30,11 @@ export default function RootLayout() {
     <AuthProvider>
       <PaperProvider theme={theme}>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-        <Slot />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+        </Stack>
       </PaperProvider>
     </AuthProvider>
   );

@@ -12,6 +12,9 @@ interface User {
   id?: string;
   email?: string;
   name?: string;
+  contractorId?: string;
+  role?: string;
+  authenticated?: boolean;
   [key: string]: any;
 }
 
@@ -25,9 +28,30 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
+  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// JWT decoding utility - only extract what you need for UI
+const extractUserFromToken = (token: string): User | null => {
+  try {
+    const payload = token.split(".")[1];
+    const decoded = JSON.parse(atob(payload));
+
+    return {
+      id: decoded.sub,
+      email: decoded.email || decoded.unique_name,
+      contractorId: decoded.contractorId,
+      role: decoded[
+        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+      ],
+    };
+  } catch (error) {
+    console.error("Error decoding JWT:", error);
+    return null;
+  }
+};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -37,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user?.authenticated;
 
   // Initialize auth state on app start
   useEffect(() => {
@@ -50,9 +74,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Try to refresh token to validate current session
           const refreshResult = await refresh();
           if (refreshResult.ok) {
-            // Extract user data from token or make a user profile request
-            // For now, we'll set a basic user object
-            setUser({ authenticated: true });
+            const userData = extractUserFromToken(accessToken);
+            if (userData) {
+              setUser(userData);
+            }
+            //setUser({ authenticated: true });
           } else {
             // Clear invalid tokens
             await tokenStorage.multiRemove([ACCESS, REFRESH]);
@@ -60,6 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -120,6 +147,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const hasRole = (role: string): boolean => {
+    return user?.role === role;
+  };
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -127,6 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login: handleLogin,
     logout: handleLogout,
     refreshToken: handleRefreshToken,
+    hasRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
