@@ -1,4 +1,4 @@
-import { login, logout, refresh } from "@/services/auth/authService";
+import { login, logout, refresh } from "@/services/authService";
 import { ACCESS, REFRESH, tokenStorage } from "@/utils/tokenStorage";
 import React, {
   createContext,

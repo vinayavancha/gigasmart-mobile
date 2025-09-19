@@ -6,8 +6,8 @@ if (Platform.OS === "web") {
   throw new Error("Secure storage is only available on iOS/Android.");
 }
 
-export const ACCESS = "access_token";
-export const REFRESH = "refresh_token";
+export const ACCESS = "accessToken";
+export const REFRESH = "refreshToken";
 
 type JwtPayload = { exp?: number };
 

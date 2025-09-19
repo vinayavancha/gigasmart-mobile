@@ -7,8 +7,8 @@ export type AuthUserDto = {
 };
 
 export type TokenPairDto = {
-  access_token: string;
-  refresh_token: string;
+  accessToken: string;
+  refreshToken: string;
 };
 
 export type AuthLoginRequest = {
@@ -20,5 +20,5 @@ export type AuthLoginResponse = TokenPairDto & {
   user?: AuthUserDto;
 };
 
-export type AuthRefreshRequest = { refresh_token: string };
+export type AuthRefreshRequest = { refreshToken: string };
 export type AuthRefreshResponse = TokenPairDto;

@@ -2,10 +2,10 @@ import { Redirect, Tabs } from "expo-router";
 import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ActivityIndicator, View } from "react-native";
 
 export default function TabLayout() {
@@ -36,17 +36,36 @@ export default function TabLayout() {
         name="dashboard"
         options={{
           title: "Dashboard",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="dashboard" color={color} size={size} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="devices"
+        options={{
+          title: "My Devices",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="devices" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="settings"
         options={{
-          title: "Explore",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="settings" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="UpdateDeviceStatusScreen"
+        options={{
+          title: "Update Status",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="settings" color={color} size={size} />
           ),
         }}
       />

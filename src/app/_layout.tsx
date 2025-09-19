@@ -31,7 +31,10 @@ export default function RootLayout() {
       <PaperProvider theme={theme}>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(protected)/(tabs)"
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ headerShown: false }} />
         </Stack>

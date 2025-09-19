@@ -29,37 +29,37 @@ export async function login(
 
   if (!res.ok) return res;
 
-  const { access_token, refresh_token } = res.value;
+  const { accessToken, refreshToken } = res.value;
 
-  if (!access_token || !refresh_token) {
+  if (!accessToken || !refreshToken) {
     return err(new ApiError("Invalid login response.", { code: "UNKNOWN" }));
   }
 
-  await tokenStorage.setItem(ACCESS, access_token);
-  await tokenStorage.setItem(REFRESH, refresh_token);
+  await tokenStorage.setItem(ACCESS, accessToken);
+  await tokenStorage.setItem(REFRESH, refreshToken);
 
   return ok(res.value);
 }
 
-/** Refresh access token (handles rotation if API returns a new refresh_token) */
+/** Refresh access token (handles rotation if API returns a new refreshToken) */
 export async function refresh(): Promise<
   Result<AuthRefreshResponse, ApiError>
 > {
-  const refresh_token = await tokenStorage.getItem(REFRESH);
-  if (!refresh_token) {
+  const refreshToken = await tokenStorage.getItem(REFRESH);
+  if (!refreshToken) {
     return err(
       new ApiError("Missing refresh token.", { code: "UNAUTHORIZED" })
     );
   }
 
   const res = await request<AuthRefreshResponse>(() =>
-    api.post("/auth/refresh", { refresh_token } as AuthRefreshRequest)
+    api.post("/auth/refresh", { refreshToken } as AuthRefreshRequest)
   );
   if (!res.ok) return res;
 
-  await tokenStorage.setItem(ACCESS, res.value.access_token);
-  if (res.value.refresh_token) {
-    await tokenStorage.setItem(REFRESH, res.value.refresh_token);
+  await tokenStorage.setItem(ACCESS, res.value.accessToken);
+  if (res.value.accessToken) {
+    await tokenStorage.setItem(REFRESH, res.value.refreshToken);
   }
   return res;
 }
@@ -67,9 +67,9 @@ export async function refresh(): Promise<
 /** Logout (best-effort server call) → always clears local tokens */
 export async function logout(): Promise<void> {
   try {
-    const refresh_token = await tokenStorage.getItem(REFRESH);
-    if (refresh_token) {
-      await request(() => api.post("/auth/logout", { refresh_token }));
+    const refreshToken = await tokenStorage.getItem(REFRESH);
+    if (refreshToken) {
+      await request(() => api.post("/auth/logout", { refreshToken }));
     }
   } finally {
     await tokenStorage.multiRemove([ACCESS, REFRESH]);

@@ -23,6 +23,7 @@ api.interceptors.request.use(async (config) => {
     );
     if (!shouldSkipAuth) {
       const token = await tokenStorage.getAccessToken();
+      console.log(token);
       if (token && !tokenStorage.isTokenExpired(token) && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -45,22 +46,22 @@ const flushQueue = (error: any, token?: string) => {
 };
 
 async function refreshAccessTokenInternal(): Promise<string> {
-  const refresh_token = await tokenStorage.getRefreshToken();
-  if (!refresh_token) throw new Error("Missing refresh token");
+  const refreshToken = await tokenStorage.getRefreshToken();
+  console.log("re", refreshToken);
+  if (!refreshToken) throw new Error("Missing refresh token");
 
   // Use plain axios to avoid recursive interceptors
   const refreshClient = axios.create({
     baseURL: ENV.API_URL,
     timeout: ENV.TIMEOUT_MS,
   });
-  const { data } = await refreshClient.post("/auth/refresh", { refresh_token });
+  const { data } = await refreshClient.post("/auth/refresh", { refreshToken });
+  console.log("refresh data", data);
+  if (!data?.accessToken) throw new Error("Invalid refresh response");
+  await tokenStorage.setItem(ACCESS, data.accessToken);
+  if (data.refreshToken) await tokenStorage.setItem(REFRESH, data.refreshToken);
 
-  if (!data?.access_token) throw new Error("Invalid refresh response");
-  await tokenStorage.setItem(ACCESS, data.access_token);
-  if (data.refresh_token)
-    await tokenStorage.setItem(REFRESH, data.refresh_token);
-
-  return data.access_token as string;
+  return data.accessToken as string;
 }
 
 api.interceptors.response.use(
